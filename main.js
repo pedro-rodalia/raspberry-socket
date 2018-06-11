@@ -1,7 +1,13 @@
 const express = require( 'express' )
+const path = require( 'path' )
+const fs = require( 'fs' )
+const Gpio = require( 'onoff' )
+	.Gpio
+
 const app = express()
 const server = require( 'http' )
 	.Server( app )
+
 const io = require( 'socket.io' )( server )
 
 // Dummy data
@@ -26,6 +32,48 @@ const gpio = [ {
 	mode: 'out',
 	value: false
 } ]
+
+class gpioConfig {
+	constructor( name, pinNumber, mode ) {
+		this.name = name
+		this.pinNumber = pinNumber
+		this.pin = null
+		switch ( mode ) {
+		case 'output':
+			asOutput()
+			break;
+		case 'input':
+			asInput()
+			break;
+		default:
+			this.mode = null
+		}
+	}
+
+	getMode() {
+		return this.mode
+	}
+
+	getName() {
+		return this.name
+	}
+
+	asInput() {
+		this.pin = new Gpio( this.pinNumber, 'in', 'both' )
+		this.mode = 'input'
+	}
+
+	asOutput() {
+		this.pin = new Gpio( this.pinNumber, 'out' )
+		this.mode = 'output'
+	}
+
+	unSet() {
+		return this.pin.unexport()
+	}
+}
+
+gpio.push( new gpioConfig( 'Red led C', '4', 'output' ) )
 
 // Sockets
 io.on( 'connection', ( socket ) => {
